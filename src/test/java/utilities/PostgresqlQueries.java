@@ -12,14 +12,29 @@ public class PostgresqlQueries {
 
 	public Connection createTables_list() throws SQLException {
 
-		Connection conn = PostgresqlDBConnection.getConnection();	
-		createTable(conn, "recipes_scrapped_by_foodcategory");		
+		Connection conn = PostgresqlDBConnection.getConnection();
+		
+		//ALL RESCIPES BASED ON FOOD CATEGORY
+		createTable(conn, "recipes_scrapped_by_foodcategory");
+		
+		//LOW FAT VEGAN RECIPES
+		createTable(conn, "lfv_recipes_with_eliminateitems");
+		createTable(conn, "lfv_recipes_with_addon_items");
+		
+		//LOW CARB HIGH FAT RECIPES
+		createTable(conn, "lchf_recipes_with_eliminateitems");		
+		createTable(conn, "lchf_recipes_with_addon_items");
+		
+		//ALLERGY RECIPES
+		
 		return conn;
 	}
 
 	public void createTable(Connection conn, String tableName) {
 		Statement statement;
 		try {
+			
+			//ALL TABLES HAVE SAME COLUMNS
 			String query = "create table IF NOT EXISTS " + tableName
 					+ "(Recipe_ID varchar(200) PRIMARY KEY, Recipe_Name varchar(2000), Recipe_Category varchar(2000),"
 					+ " Food_Category varchar(2000), Ingredients varchar(2000), "
@@ -37,7 +52,7 @@ public class PostgresqlQueries {
 
 	public static void insertRow(Connection conn, String tableName, Map<String, Object[]> recipe) {
 		
-		System.out.println("Inserting into Data base");
+		System.out.println("Inserting into Data base tables");
 		PreparedStatement preparedStatement = null;
 		try {
 			Set<String> keyid = recipe.keySet();
@@ -58,29 +73,27 @@ public class PostgresqlQueries {
 
 				// PreparedStatement object with the SQL query
 				preparedStatement = conn.prepareStatement(query);
+								
 				// Set values for each parameter in the prepared statement
 				preparedStatement.setString(1, (String) recipeObject[0]);// recipe_id"
-				preparedStatement.setString(2, (String) recipeObject[1]);// recipeName
-				preparedStatement.setString(3, (String) recipeObject[2]);// rec_Category
+				preparedStatement.setString(2, (String) recipeObject[1]);// recipe_Name
+				preparedStatement.setString(3, (String) recipeObject[2]);// recipe_Category
 				preparedStatement.setString(4, (String) recipeObject[3]);// food_Category
-				preparedStatement.setString(5, (String) recipeObject[4]);// ingredient_List
-				preparedStatement.setString(6, (String) recipeObject[5]);// prepTime
-				preparedStatement.setString(7, (String) recipeObject[6]);// cookTime
+				preparedStatement.setString(5, (String) recipeObject[4]);// ingredients
+				preparedStatement.setString(6, (String) recipeObject[5]);// preparation_Time
+				preparedStatement.setString(7, (String) recipeObject[6]);// cooking_Time
 				preparedStatement.setString(8, (String) recipeObject[7]);// tags
-				preparedStatement.setString(9, (String) recipeObject[8]);// noOfServings
-				preparedStatement.setString(10, (String) recipeObject[9]);// cuisineCategory
-				preparedStatement.setString(11, (String) recipeObject[10]);// desc
-				preparedStatement.setString(12, (String) recipeObject[11]);// method
-				preparedStatement.setString(13, (String) recipeObject[12]);// nutritionValue
-				preparedStatement.setString(14, (String) recipeObject[13]);// recipeURL
+				preparedStatement.setString(9, (String) recipeObject[8]);// no_of_servings
+				preparedStatement.setString(10, (String) recipeObject[9]);// cuisine_category
+				preparedStatement.setString(11, (String) recipeObject[10]);// recipe_Description
+				preparedStatement.setString(12, (String) recipeObject[11]);// preparation_method
+				preparedStatement.setString(13, (String) recipeObject[12]);// nutrient_values
+				preparedStatement.setString(14, (String) recipeObject[13]);// recipe_URL
 				preparedStatement.setString(15, (String) recipeObject[14]);// AddToIngredient
-
-				// ecipes_LFV_Elimination.put( Integer.toString(LFVCounter) , new Object[] {
 
 				// Execute the insert operation
 				preparedStatement.executeUpdate();
-
-				System.out.println("Row Inserted");
+				
 			}
 		} catch (SQLException e) {
 			System.out.println("Error inserting row: " + e.getMessage());
