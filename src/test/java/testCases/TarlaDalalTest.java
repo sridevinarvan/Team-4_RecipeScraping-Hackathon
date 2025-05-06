@@ -11,9 +11,9 @@ public class TarlaDalalTest extends TestBase {
     public void scrapeBreakfastRecipes() throws Exception {
 		//ThreadLocal<WebDriver> driver = new ThreadLocal<>();
 		TarladalalSearch searchscrape = new TarladalalSearch(driver.get());
-		//searchscrape.scrapeAllRecipes("Vegan");
-		//searchscrape.scrapeAllRecipes("Vegetarian");
-		searchscrape.scrapeAllRecipes("Jain");
+		searchscrape.scrapeAllRecipes("Vegan");
+//		searchscrape.scrapeAllRecipes("Vegetarian");
+//		searchscrape.scrapeAllRecipes("Jain");
 	}
 }
         

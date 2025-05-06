@@ -47,4 +47,12 @@ public class ConfigReader {
 		else
 			throw new RuntimeException("implicitlyWait not specified in the Configuration.properties file.");
 	}
+	
+	public static String getExcelPath() {
+		String path = properties.getProperty("excelPath");
+		if (path != null)
+			return path;
+		else
+			throw new RuntimeException("Excel Path not specified in the Config.properties file.");
+	}
 }
