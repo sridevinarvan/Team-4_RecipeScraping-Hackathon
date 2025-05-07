@@ -26,8 +26,7 @@ public class PostgresqlQueries {
 		createTable(conn, "lchf_recipes_with_addon_items");
 		
 		//ALLERGY RECIPES
-		createTable(conn, "lvf_recipes_with_Allergy_Milk");		
-		createTable(conn, "lvf_recipes_with_Allery_Nuts");
+		
 		return conn;
 	}
 

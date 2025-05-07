@@ -27,8 +27,6 @@ public class TarladalalSearch {
 
 	List<String> LCHF_EliminateItemList = new ArrayList<String>();
 	List<String> LCHF_AddItemList = new ArrayList<String>();
-	
-	List<String > allergiesList = new ArrayList<>();
 
 	List<String> cuisineDataList = new ArrayList<String>();
 
@@ -63,8 +61,6 @@ public class TarladalalSearch {
 		this.read_LFV_Data_Excel();
 
 		this.read_LCHF_Data_Excel();
-		
-		this.read_Allergies_Data();
 
 		this.read_FoodCategoryData_Excel();
 
@@ -77,12 +73,6 @@ public class TarladalalSearch {
 		Map<String, Object[]> recipes_LCHF_Add = new TreeMap<String, Object[]>();
 
 		Map<String, Object[]> recipes_LFV_Add = new TreeMap<String, Object[]>();
-		
-		Map<String, Object[]> recipes_With_Allergies = new TreeMap<String, Object[]>();
-		
-		Map<String, Object[]> recipes_With_Allergy_Milk = new TreeMap<String, Object[]>();
-		
-		Map<String, Object[]> recipes_With_Allergy_Nuts = new TreeMap<String, Object[]>();
 
 		for (String foodCategory : foodCategoryDataList) {
 
@@ -306,31 +296,7 @@ public class TarladalalSearch {
 							new Object[] { recipe_ID, recipe_Name, recipe_Category, food_Category, ingredients,
 									preparation_Time, cooking_Time, tags, no_of_servings, cuisine_category,
 									recipe_Description, preparation_method, nutrient_values, recipe_URL, "" });
-					
-					List<String> milkAllergies = Arrays.asList("milk","soy");
-					List<String> nutAllergies = Arrays.asList("sesame","peanut","walnut","almond","cashew","hazlenut","pecan","pistachio");
-					for(String milkAllergy:milkAllergies) {
-						if(ingredients.toLowerCase().contains(milkAllergy)) {
-							recipes_With_Allergy_Milk.put(Integer.toString(recipeCounter),
-									new Object[] { recipe_ID, recipe_Name, recipe_Category, food_Category, ingredients,
-											preparation_Time, cooking_Time, tags, no_of_servings, cuisine_category,
-											recipe_Description, preparation_method, nutrient_values, recipe_URL, "" });
-							break; // do not add the same recipe twice if the recipe has both milk and soy
-						}
-						
-					}
-					
-					for (String nutAllergy:nutAllergies) {
-						if(ingredients.toLowerCase().contains(nutAllergy)) {
-							recipes_With_Allergy_Nuts.put(Integer.toString(recipeCounter),
-									new Object[] { recipe_ID, recipe_Name, recipe_Category, food_Category, ingredients,
-											preparation_Time, cooking_Time, tags, no_of_servings, cuisine_category,
-											recipe_Description, preparation_method, nutrient_values, recipe_URL, "" });
-							break; // do not add the same recipe multiple times if it has multiple nuts
-						}
-						
-					}
-					
+
 					driver.navigate().back();
 
 					// Wait until page reloads before next scrape
@@ -357,7 +323,6 @@ public class TarladalalSearch {
 
 		System.out.println("Total Valid LCHF Recipe(Elimination Check) = " + recipes_LCHF_Elimination.size());
 		System.out.println("Total Valid LCHF Recipe(Add Check) = " + recipes_LCHF_Add.size());
-		System.out.println("Total number of recipes with allergies = " + recipes_With_Allergies.size());
 
 		// write data to database
 
@@ -374,10 +339,6 @@ public class TarladalalSearch {
 		dbQuries.insertRow(conn, "lchf_recipes_with_addon_items", recipes_LCHF_Add);
 
 		dbQuries.insertRow(conn, "recipes_scrapped_by_foodcategory", recipes_scrapped_treemap);
-		
-		dbQuries.insertRow(conn,"lvf_recipes_with_Allergy_Milk", recipes_With_Allergy_Milk);
-		dbQuries.insertRow(conn,"lvf_recipes_with_Allergy_Nuts", recipes_With_Allergy_Nuts);
-		
 	}
 
 	public void read_LFV_Data_Excel() {
@@ -408,18 +369,6 @@ public class TarladalalSearch {
 			String testData = reader.getCellData("Final list for LCHF AddItems ", 1, i);
 			LCHF_AddItemList.add(testData.toLowerCase());
 		}
-	}
-	
-	public void read_Allergies_Data() {
-		ExcelReader reader = new ExcelReader("./src/test/resources/IngredientsAndComorbidities-ScrapperHackathon.xlsx");
-		Boolean sheetCheck = reader.isSheetExist("Filter -1 Allergies - Bonus Poi");
-		System.out.println("Is the Datasheet exist for Filter -1 Allergies - Bonus Poi? -  " + sheetCheck);
-		for (int i = 2; i <= 14; i++) {
-			String testData = reader.getCellData("Filter -1 Allergies - Bonus Poi", 0, i);
-			allergiesList.add(testData.toLowerCase());
-			
-		}
-		
 	}
 
 	public void read_FoodCategoryData_Excel() {
