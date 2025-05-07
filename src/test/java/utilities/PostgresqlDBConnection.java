@@ -24,9 +24,9 @@ public class PostgresqlDBConnection {
 			connection = DriverManager.getConnection(URL, USER, PASSWORD);
 			
 			if (connection != null) {
-				System.out.println("connection Established");
+				System.out.println("\n***Postgresql database connection established***");
 			} else {
-				System.out.println("Connection failed");
+				System.out.println("\nConnection failed");
 			}
 		} catch (Exception e) {
 			System.out.println(e);
@@ -39,7 +39,7 @@ public class PostgresqlDBConnection {
 	    try {
 	        if (connection != null && !connection.isClosed()) {
 	            connection.close();
-	            System.out.println("Connection closed.");
+	            System.out.println("\n***Connection closed.***");
 	        }
 	    } catch (SQLException e) {
 	        System.out.println("Error while closing connection: " + e.getMessage());
