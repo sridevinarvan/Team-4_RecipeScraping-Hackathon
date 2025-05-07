@@ -27,6 +27,8 @@ public class PostgresqlQueries {
 
 		System.out.println("Required Tables Created");
 		// ALLERGY RECIPES
+		createTable(conn, "lvf_recipes_with_Allergy_Milk");
+		createTable(conn, "lvf_recipes_with_Allergy_Nuts");
 
 		return conn;
 	}
