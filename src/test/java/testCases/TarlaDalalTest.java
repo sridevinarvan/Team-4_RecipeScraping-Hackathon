@@ -16,18 +16,14 @@ public class TarlaDalalTest extends TestBase {
 	public void scrapeRecipes() throws Exception {
 		
 		//Opens db connection and creates tables 
-
 		PostgresqlQueries dbQuries = new PostgresqlQueries();
 		conn = dbQuries.createTables_list();
 		
 		//scrape recipes and insert into tables
 		TarladalalSearch searchscrape = new TarladalalSearch(driver.get(), conn,dbQuries);
-		searchscrape.scrapeAllRecipes("Vegan");
+		searchscrape.scrapeAllRecipes();
 		
 		//close db connection
-		dbQuries.closeConnection(conn);
-				
-		// searchscrape.scrapeAllRecipes("Vegetarian");
-		// searchscrape.scrapeAllRecipes("Jain");
+		dbQuries.closeConnection(conn);		
 	}
 }
