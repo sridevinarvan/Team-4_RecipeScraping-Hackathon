@@ -13,28 +13,29 @@ public class PostgresqlQueries {
 	public Connection createTables_list() throws SQLException {
 
 		Connection conn = PostgresqlDBConnection.getConnection();
-		
-		//ALL RESCIPES BASED ON FOOD CATEGORY
+
+		// ALL RESCIPES BASED ON FOOD CATEGORY
 		createTable(conn, "recipes_scrapped_by_foodcategory");
-		
-		//LOW FAT VEGAN RECIPES
+
+		// LOW FAT VEGAN RECIPES
 		createTable(conn, "lfv_recipes_with_eliminateitems");
 		createTable(conn, "lfv_recipes_with_addon_items");
-		
-		//LOW CARB HIGH FAT RECIPES
-		createTable(conn, "lchf_recipes_with_eliminateitems");		
+
+		// LOW CARB HIGH FAT RECIPES
+		createTable(conn, "lchf_recipes_with_eliminateitems");
 		createTable(conn, "lchf_recipes_with_addon_items");
-		
-		//ALLERGY RECIPES
-		
+
+		System.out.println("Required Tables Created");
+		// ALLERGY RECIPES
+
 		return conn;
 	}
 
 	public void createTable(Connection conn, String tableName) {
 		Statement statement;
 		try {
-			
-			//ALL TABLES HAVE SAME COLUMNS
+
+			// ALL TABLES HAVE SAME COLUMNS
 			String query = "create table IF NOT EXISTS " + tableName
 					+ "(Recipe_ID varchar(200) PRIMARY KEY, Recipe_Name varchar(2000), Recipe_Category varchar(2000),"
 					+ " Food_Category varchar(2000), Ingredients varchar(2000), "
@@ -44,14 +45,13 @@ public class PostgresqlQueries {
 					+ "Nutrient_Values varchar(2000), Recipe_URL varchar(2000), AddToIngredient varchar(2000));";
 			statement = conn.createStatement();
 			statement.executeUpdate(query);
-			System.out.println("Table Created");
 		} catch (Exception e) {
 			System.out.println(e);
 		}
 	}
 
 	public static void insertRow(Connection conn, String tableName, Map<String, Object[]> recipe) {
-		
+
 		System.out.println("Inserting into Data base tables");
 		PreparedStatement preparedStatement = null;
 		try {
@@ -73,7 +73,7 @@ public class PostgresqlQueries {
 
 				// PreparedStatement object with the SQL query
 				preparedStatement = conn.prepareStatement(query);
-								
+
 				// Set values for each parameter in the prepared statement
 				preparedStatement.setString(1, (String) recipeObject[0]);// recipe_id"
 				preparedStatement.setString(2, (String) recipeObject[1]);// recipe_Name
@@ -89,12 +89,13 @@ public class PostgresqlQueries {
 				preparedStatement.setString(12, (String) recipeObject[11]);// preparation_method
 				preparedStatement.setString(13, (String) recipeObject[12]);// nutrient_values
 				preparedStatement.setString(14, (String) recipeObject[13]);// recipe_URL
-				preparedStatement.setString(15, (String) recipeObject[14]);// AddToIngredient
+				preparedStatement.setString(15, (String) recipeObject[14]);// AddTo Ingredient
 
 				// Execute the insert operation
 				preparedStatement.executeUpdate();
-				
+
 			}
+			System.out.println("Recipes details inserted into :" + tableName);
 		} catch (SQLException e) {
 			System.out.println("Error inserting row: " + e.getMessage());
 		} finally {
@@ -108,9 +109,8 @@ public class PostgresqlQueries {
 		}
 
 	}
-	
-	public void closeConnection(Connection conn)
-	{
+
+	public void closeConnection(Connection conn) {
 		PostgresqlDBConnection.closeConnection(conn);
 	}
 }
