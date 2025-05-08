@@ -11,7 +11,7 @@ import java.util.List;
 
 public class PostgresqlDBConnection {
 
-	private static final String URL = "jdbc:postgresql://localhost:5431/Team4_RecipeRaiders_May25";
+	private static final String URL = "jdbc:postgresql://localhost:5431/Team4_RecipeRaiders_May25_db";
 	private static final String USER = "postgres";
 	private static final String PASSWORD = "admin";
 

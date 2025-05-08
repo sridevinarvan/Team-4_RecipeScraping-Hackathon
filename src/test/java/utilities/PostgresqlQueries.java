@@ -30,6 +30,10 @@ public class PostgresqlQueries {
 		createTable(conn, "lfv_recipes_allergy_with_milk");
 		createTable(conn, "lfv_recipes_allergy_with_nut");
 		
+		createTable(conn, "lchf_recipes_allergy_with_milk");
+		createTable(conn, "lchf_recipes_allergy_with_nut");
+
+		
 		System.out.println("Required Tables Created");
 		return conn;
 	}
@@ -45,7 +49,7 @@ public class PostgresqlQueries {
 					+ "Preparation_Time varchar(200), Cooking_Time varchar(200), "
 					+ "Tag varchar(2000), No_Of_Servings varchar(2000), Cuisine_Category varchar(2000),"
 					+ " Recipe_Description varchar(5000), Preparation_Method varchar(5000), "
-					+ "Nutrient_Values varchar(2000), Recipe_URL varchar(2000), AddToIngredient varchar(2000));";
+					+ "Nutrient_Values varchar(2000), Recipe_URL varchar(2000), Ingredients_contains varchar(2000));";
 			statement = conn.createStatement();
 			statement.executeUpdate(query);
 		} catch (Exception e) {
@@ -70,7 +74,7 @@ public class PostgresqlQueries {
 				String query = "INSERT INTO " + tableName
 						+ "(Recipe_ID,Recipe_Name,Recipe_Category,Food_Category,Ingredients,Preparation_Time,"
 						+ "Cooking_Time,Tag,No_Of_Servings,Cuisine_Category,Recipe_Description, Preparation_Method,"
-						+ "Nutrient_Values,Recipe_URL,AddToIngredient) "
+						+ "Nutrient_Values,Recipe_URL,Ingredients_contains) "
 						+ "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
 				// PreparedStatement object with the SQL query
