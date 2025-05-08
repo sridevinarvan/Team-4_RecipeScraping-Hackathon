@@ -25,9 +25,12 @@ public class PostgresqlQueries {
 		createTable(conn, "lchf_recipes_with_eliminateitems");
 		createTable(conn, "lchf_recipes_with_addon_items");
 
-		System.out.println("Required Tables Created");
+		
 		// ALLERGY RECIPES
-
+		createTable(conn, "lfv_recipes_allergy_with_milk");
+		createTable(conn, "lfv_recipes_allergy_with_nut");
+		
+		System.out.println("Required Tables Created");
 		return conn;
 	}
 
@@ -52,7 +55,6 @@ public class PostgresqlQueries {
 
 	public static void insertRow(Connection conn, String tableName, Map<String, Object[]> recipe) {
 
-		System.out.println("Inserting into Data base tables");
 		PreparedStatement preparedStatement = null;
 		try {
 			Set<String> keyid = recipe.keySet();
