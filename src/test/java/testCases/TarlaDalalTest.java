@@ -1,11 +1,14 @@
 package testCases;
 
 import java.sql.Connection;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.testng.annotations.Test;
 
 import base.TestBase;
 import pages.TarladalalSearch;
+import utilities.ExcelReader;
 import utilities.PostgresqlQueries;
 
 public class TarlaDalalTest extends TestBase {
@@ -14,16 +17,16 @@ public class TarlaDalalTest extends TestBase {
 
 	@Test
 	public void scrapeRecipes() throws Exception {
-		
-		//Opens db connection and creates tables 
-		PostgresqlQueries dbQuries = new PostgresqlQueries();
+
+		// Opens db connection and creates tables
+		PostgresqlQueries dbQuries = new PostgresqlQueries(); 
 		conn = dbQuries.createTables_list();
-		
-		//scrape recipes and insert into tables
-		TarladalalSearch searchscrape = new TarladalalSearch(driver.get(), conn,dbQuries);
+
+		// scrape recipes and insert into tables
+		TarladalalSearch searchscrape = new TarladalalSearch(driver.get(), conn, dbQuries);
 		searchscrape.scrapeAllRecipes();
-		
-		//close db connection
-		dbQuries.closeConnection(conn);		
+
+		// close db connection
+		dbQuries.closeConnection(conn);
 	}
 }
