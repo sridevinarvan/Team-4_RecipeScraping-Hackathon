@@ -65,7 +65,7 @@ public class Search_Scrape_Recipes {
 		Map<String, Object[]> recipes_Allergy_Nut = new TreeMap<String, Object[]>();
 		Map<String, Object[]> recipes_LCHF_Allergy_Milk = new TreeMap<String, Object[]>();
 		Map<String, Object[]> recipes_LCHF_Allergy_Nut = new TreeMap<String, Object[]>();
-
+		int total_recipes = 0;// counter for total recipes
 		for (int foodCatIndex = 0; foodCatIndex < foodCategoryDataList.size(); foodCatIndex++) {
 
 			String foodCategory = foodCategoryDataList.get(foodCatIndex);
@@ -88,21 +88,23 @@ public class Search_Scrape_Recipes {
 
 				do {
 					// Wait for page to load recipes
-					new WebDriverWait(driver, Duration.ofSeconds(10)).until(ExpectedConditions
+					new WebDriverWait(driver, Duration.ofSeconds(2)).until(ExpectedConditions
 							.visibilityOfElementLocated(By.xpath("//h5[@class='mb-0 two-line-text']/a")));
 
 					List<WebElement> allLinks = driver.findElements(By.xpath("//h5[@class='mb-0 two-line-text']/a"));
 					List<String> recipeNames = new ArrayList<>();
 					List<String> recipeUrls = new ArrayList<>();
-					int breakloop = 0;
+					int breakloop = 0;					
 					for (WebElement link : allLinks) {
 						if (link.isDisplayed()) {
 							recipeNames.add(link.getText());
 							recipeUrls.add(link.getAttribute("href"));
-							all_recipesCounter++;
-							if (breakloop == 6)
-								break;
-							breakloop++;
+							all_recipesCounter++;		
+							total_recipes++;
+							if (foodCategory.equalsIgnoreCase("Vegetarian")) {
+								if (total_recipes == 150)
+									break;
+							}
 						}
 					}
 
@@ -112,9 +114,9 @@ public class Search_Scrape_Recipes {
 						recipeCounter++;// counter to store unique values into tree map
 
 						String recipe_Name = recipeNames.get(j), recipe_URL = recipeUrls.get(j), recipe_ID = "",
-								recipe_Category = "", ingredients = "", preparation_Time = "",
-								cooking_Time = "", tags = "", no_of_servings = "", cuisine_category = "",
-								recipe_Description = "", preparation_method = "", nutrient_values = "";
+								recipe_Category = "", ingredients = "", preparation_Time = "", cooking_Time = "",
+								tags = "", no_of_servings = "", cuisine_category = "", recipe_Description = "",
+								preparation_method = "", nutrient_values = "";
 						driver.navigate().to(recipe_URL);
 
 						// Extract ID
@@ -152,7 +154,7 @@ public class Search_Scrape_Recipes {
 						if (!tagElements.isEmpty()) {
 							tags = tagElements.get(0).getText();
 						} else {
-							tags = "not available"; // or null or "not available", based on context
+							tags = "not available"; 
 						}
 
 						List<WebElement> ingredientsSectionList = driver
@@ -164,7 +166,7 @@ public class Search_Scrape_Recipes {
 							ingredients = "not available";
 						}
 
-						 // default assignment outside the loop
+					
 						for (String category : recipeCategorieslist) {
 							if (tags.contains(category)) {
 								recipe_Category = category;
@@ -180,13 +182,20 @@ public class Search_Scrape_Recipes {
 								break;
 							}
 						}
-						List<WebElement> descriptionElements = driver
-								.findElements(By.xpath("//p[contains(text(),'|')]"));
-						if (!descriptionElements.isEmpty()) {
+						
+						try {
+							WebElement recipedescriptionElement = driver.findElement(By.xpath("//*[@id='aboutrecipe']/p[1]"));
+							recipe_Description = recipedescriptionElement.getText();
+						} catch (Exception e) {
+						}
+						
+						
+						//List<WebElement> descriptionElements = driver.findElements(By.xpath("//p[contains(text(),'|')]"));
+						/*if (!descriptionElements.isEmpty()) {
 							recipe_Description = descriptionElements.get(0).getText();
 						} else {
 							recipe_Description = "not available";
-						}
+						}*/
 
 						List<WebElement> prepMethodElements = driver.findElements(By.xpath("//div[@id='methods']"));
 						if (!prepMethodElements.isEmpty()) {
@@ -406,18 +415,18 @@ public class Search_Scrape_Recipes {
 							LCHFCounter = LCHFCounter + 1;
 						}
 
-						recipes_scrapped_treemap.put(Integer.toString(all_recipesCounter),
+						recipes_scrapped_treemap.put(recipe_ID+"_"+Integer.toString(all_recipesCounter),
 								new Object[] { recipe_ID, recipe_Name, recipe_Category, foodCategory, ingredients,
 										preparation_Time, cooking_Time, tags, no_of_servings, cuisine_category,
 										recipe_Description, preparation_method, nutrient_values, recipe_URL, "" });
-
-						// driver.navigate().back();
+						
+							driver.navigate().back();
 					}
 
 				} while (clickNext());
 
 			}
-			System.out.println("Total number of " + foodCategory + " recipes scrapped are: " + totalRecipes);
+			System.out.println("\nTotal number of " + foodCategory + " recipes scrapped are: " + totalRecipes);
 
 		}
 
@@ -443,13 +452,12 @@ public class Search_Scrape_Recipes {
 		dbQuery.insertRow(conn, "lfv_recipes_with_addon_items", recipes_LFV_Add);
 		dbQuery.insertRow(conn, "lfv_recipes_allergy_with_milk", recipes_Allergy_Milk);
 		dbQuery.insertRow(conn, "lfv_recipes_allergy_with_nut", recipes_Allergy_Nut);
-		
-		
-		dbQuery.insertRow(conn, "lchf_recipes_with_eliminateitems", recipes_LCHF_Elimination);																								
-		dbQuery.insertRow(conn, "lchf_recipes_with_addon_items", recipes_LCHF_Add); 		
-		dbQuery.insertRow(conn, "lchf_recipes_allergy_with_milk", recipes_LCHF_Allergy_Milk);	
+
+		dbQuery.insertRow(conn, "lchf_recipes_with_eliminateitems", recipes_LCHF_Elimination);
+		dbQuery.insertRow(conn, "lchf_recipes_with_addon_items", recipes_LCHF_Add);
+		dbQuery.insertRow(conn, "lchf_recipes_allergy_with_milk", recipes_LCHF_Allergy_Milk);
 		dbQuery.insertRow(conn, "lchf_recipes_allergy_with_nut", recipes_LCHF_Allergy_Nut);
-	
+
 		// All recipes
 		dbQuery.insertRow(conn, "recipes_scrapped_by_foodcategory", recipes_scrapped_treemap);
 
