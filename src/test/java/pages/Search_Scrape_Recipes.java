@@ -36,6 +36,8 @@ public class Search_Scrape_Recipes {
 	private final List<String> foodCategoryDataList = new ArrayList<>();
 	private final List<String> cuisineDataList = new ArrayList<>();
 	private final List<String> recipeCategorieslist = new ArrayList<>();
+	private final List<String> recipeFoodsToAvoidlist = new ArrayList<>();
+
 	private final List<String> allergiesList = new ArrayList<>();
 
 	public Search_Scrape_Recipes(WebDriver driver, Connection conn, PostgresqlQueries dbQuries) {
@@ -65,7 +67,7 @@ public class Search_Scrape_Recipes {
 		Map<String, Object[]> recipes_Allergy_Nut = new TreeMap<String, Object[]>();
 		Map<String, Object[]> recipes_LCHF_Allergy_Milk = new TreeMap<String, Object[]>();
 		Map<String, Object[]> recipes_LCHF_Allergy_Nut = new TreeMap<String, Object[]>();
-		//int total_recipes = 0;// counter for total recipes
+		// int total_recipes = 0;// counter for total recipes
 		for (int foodCatIndex = 0; foodCatIndex < foodCategoryDataList.size(); foodCatIndex++) {
 
 			String foodCategory = foodCategoryDataList.get(foodCatIndex);
@@ -75,7 +77,7 @@ public class Search_Scrape_Recipes {
 				homeButton.click();
 			}
 			System.out.println("\n#####################################");
-			System.out.println("Search " + foodCategory + " Foods");
+			System.out.println(foodCategory + " Foods");
 			System.out.println("#####################################");
 
 			searchFood(foodCategory);
@@ -94,13 +96,15 @@ public class Search_Scrape_Recipes {
 					List<WebElement> allLinks = driver.findElements(By.xpath("//h5[@class='mb-0 two-line-text']/a"));
 					List<String> recipeNames = new ArrayList<>();
 					List<String> recipeUrls = new ArrayList<>();
-					
+					int countresp = 0;
 					for (WebElement link : allLinks) {
 						if (link.isDisplayed()) {
 							recipeNames.add(link.getText());
 							recipeUrls.add(link.getAttribute("href"));
-							all_recipesCounter++;		
-							//total_recipes++;							
+							all_recipesCounter++;
+							countresp++;
+							/*if (countresp == 2)
+								break;*/
 						}
 					}
 
@@ -150,7 +154,7 @@ public class Search_Scrape_Recipes {
 						if (!tagElements.isEmpty()) {
 							tags = tagElements.get(0).getText();
 						} else {
-							tags = "not available"; 
+							tags = "not available";
 						}
 
 						List<WebElement> ingredientsSectionList = driver
@@ -162,7 +166,6 @@ public class Search_Scrape_Recipes {
 							ingredients = "not available";
 						}
 
-					
 						for (String category : recipeCategorieslist) {
 							if (tags.contains(category)) {
 								recipe_Category = category;
@@ -178,13 +181,14 @@ public class Search_Scrape_Recipes {
 								break;
 							}
 						}
-						
+
 						try {
-							WebElement recipedescriptionElement = driver.findElement(By.xpath("//*[@id='aboutrecipe']/p[1]"));
+							WebElement recipedescriptionElement = driver
+									.findElement(By.xpath("//*[@id='aboutrecipe']/p[1]"));
 							recipe_Description = recipedescriptionElement.getText();
 						} catch (Exception e) {
 						}
-						
+
 						List<WebElement> prepMethodElements = driver.findElements(By.xpath("//div[@id='methods']"));
 						if (!prepMethodElements.isEmpty()) {
 							preparation_method = prepMethodElements.get(0).getText();
@@ -205,217 +209,226 @@ public class Search_Scrape_Recipes {
 						System.out.println("Recipe URL scrapped: " + recipe_URL);
 						System.out.println("Recipe Id scrapped: " + recipe_ID);
 
-						// ***** Iterate LFV Elimination array list using for loop and compare each
-						// value *****
-						// ****** with Ingredients to filter recipes*****
-
-						boolean validLFVRecipe = true;
-
-						for (String eliminatedItem : LFV_EliminateItemList) {
-							if (ingredients.contains(eliminatedItem) && eliminatedItem.trim() != "") {
-								validLFVRecipe = false;
+						boolean foodstoAvoidFlag = false;
+						for (String foodstoavoid : recipeFoodsToAvoidlist) {
+							if (tags.contains(foodstoavoid) || preparation_method.contains(foodstoavoid)) {
+								foodstoAvoidFlag = true;
 								break;
 							}
 						}
+						if (!foodstoAvoidFlag) {
+							// ***** Iterate LFV Elimination array list using for loop and compare each
+							// value *****
+							// ****** with Ingredients to filter recipes*****
 
-						if (validLFVRecipe) {
+							boolean validLFVRecipe = true;
 
-							System.out.println("Valid LFV Item ");
-							// Add
-							recipes_LFV_Elimination.put(Integer.toString(LFVCounter),
+							for (String eliminatedItem : LFV_EliminateItemList) {
+								if (ingredients.contains(eliminatedItem) && eliminatedItem.trim() != "") {
+									validLFVRecipe = false;
+									break;
+								}
+							}
+
+							if (validLFVRecipe) {
+
+								System.out.println("Valid LFV Item ");
+								// Add
+								recipes_LFV_Elimination.put(Integer.toString(LFVCounter),
+										new Object[] { recipe_ID, recipe_Name, recipe_Category, foodCategory,
+												ingredients, preparation_Time, cooking_Time, tags, no_of_servings,
+												cuisine_category, recipe_Description, preparation_method,
+												nutrient_values, recipe_URL, "" });
+
+								// check add on items
+								boolean addLFVItemcheck = false;
+								String addLFVItemsList = "";
+								for (String addItem : LFV_AddItemList) {
+									if (ingredients.contains(addItem.trim()) && addItem.trim() != "") {
+										if (addLFVItemsList.trim() == "")
+											addLFVItemsList = addItem;
+										else
+											addLFVItemsList += "," + addItem;
+										addLFVItemcheck = true;
+									}
+								}
+								if (addLFVItemcheck) {
+									System.out.println("Recipe contains LFV Add Items : " + addLFVItemsList);
+
+									recipes_LFV_Add.put("LFV :" + Integer.toString(LFVCounter),
+											new Object[] { recipe_ID, recipe_Name, recipe_Category, foodCategory,
+													ingredients, preparation_Time, cooking_Time, tags, no_of_servings,
+													cuisine_category, recipe_Description, preparation_method,
+													nutrient_values, recipe_URL, addLFVItemsList });
+								}
+								// code check LFV allergens
+								boolean allergyMilk = false;
+								boolean allergyNut = false;
+								String addLFVAllergensItemsList = "";
+								for (String allergyItem : allergiesList) {
+									String trimmedItem = allergyItem.trim();
+									if (!trimmedItem.isEmpty()
+											&& ingredients.toLowerCase().contains(trimmedItem.toLowerCase())) {
+										if (trimmedItem.equalsIgnoreCase("milk")) {
+
+											allergyMilk = true;
+										} else {
+											if (addLFVAllergensItemsList == "")
+												addLFVAllergensItemsList = trimmedItem;
+											else
+												addLFVAllergensItemsList += "," + trimmedItem;
+											allergyNut = true;
+										}
+									}
+								}
+
+								// Determine the type of allergen presence
+								if (allergyMilk && allergyNut) {
+									System.out.println("LFV Recipe has both Milk and Nut allergens");
+									recipes_Allergy_Milk.put("LFV :" + Integer.toString(LFVCounter),
+											new Object[] { recipe_ID, recipe_Name, recipe_Category, foodCategory,
+													ingredients, preparation_Time, cooking_Time, tags, no_of_servings,
+													cuisine_category, recipe_Description, preparation_method,
+													nutrient_values, recipe_URL, "Milk" });
+									recipes_Allergy_Nut.put("LFV :" + Integer.toString(LFVCounter),
+											new Object[] { recipe_ID, recipe_Name, recipe_Category, foodCategory,
+													ingredients, preparation_Time, cooking_Time, tags, no_of_servings,
+													cuisine_category, recipe_Description, preparation_method,
+													nutrient_values, recipe_URL, addLFVAllergensItemsList });
+
+								} else if (allergyMilk) {
+									System.out.println("LFV Recipe has Milk allergen only");
+									recipes_Allergy_Milk.put("LFV :" + Integer.toString(LFVCounter),
+											new Object[] { recipe_ID, recipe_Name, recipe_Category, foodCategory,
+													ingredients, preparation_Time, cooking_Time, tags, no_of_servings,
+													cuisine_category, recipe_Description, preparation_method,
+													nutrient_values, recipe_URL, "Milk" });
+								} else if (allergyNut) {
+									System.out.println("LFV Recipe has Nut allergen only");
+									recipes_Allergy_Nut.put("LFV :" + Integer.toString(LFVCounter),
+											new Object[] { recipe_ID, recipe_Name, recipe_Category, foodCategory,
+													ingredients, preparation_Time, cooking_Time, tags, no_of_servings,
+													cuisine_category, recipe_Description, preparation_method,
+													nutrient_values, recipe_URL, addLFVAllergensItemsList });
+								} else {
+									System.out.println("LFV Recipe has no milk or nut allergens");
+								}
+								LFVCounter = LFVCounter + 1;
+							}
+
+							// ******Iterate LCHF Elimination array list using for loop and compare each
+							// value****
+							// ****** with Ingredients to filter recipes*****
+
+							boolean validLCHFRecipe = true;
+							for (String eliminatedItem : LCHF_EliminateItemList) {
+
+								if (ingredients.contains(eliminatedItem) && eliminatedItem.trim() != "") {
+									validLCHFRecipe = false;
+									break;
+								}
+							}
+
+							if (validLCHFRecipe) {
+
+								System.out.println("Valid LCHF Recipe ");
+
+								recipes_LCHF_Elimination.put(Integer.toString(LCHFCounter),
+										new Object[] { recipe_ID, recipe_Name, recipe_Category, foodCategory,
+												ingredients, preparation_Time, cooking_Time, tags, no_of_servings,
+												cuisine_category, recipe_Description, preparation_method,
+												nutrient_values, recipe_URL, "" });
+
+								// check add on items
+								boolean addLCHFItemcheck = false;
+								String addLCHFItemsList = "";
+								for (String addItem : LCHF_AddItemList) {
+									if (ingredients.contains(addItem.trim()) && addItem.trim() != "") {
+										if (addLCHFItemsList.trim() == "")
+											addLCHFItemsList = addItem;
+										else
+											addLCHFItemsList += "," + addItem;
+										addLCHFItemcheck = true;
+									}
+								}
+
+								if (addLCHFItemcheck) {
+									System.out.println("Recipe contains LCHF Add Items : " + addLCHFItemsList);
+									recipes_LCHF_Add.put("LCHF :" + Integer.toString(LCHFCounter),
+											new Object[] { recipe_ID, recipe_Name, recipe_Category, foodCategory,
+													ingredients, preparation_Time, cooking_Time, tags, no_of_servings,
+													cuisine_category, recipe_Description, preparation_method,
+													nutrient_values, recipe_URL, addLCHFItemsList });
+								}
+
+								// code check LCHF allergens
+								boolean allergyMilk = false;
+								boolean allergyNut = false;
+								String addLCHFAllergensItemsList = "";
+								for (String allergyItem : allergiesList) {
+									String trimmedItem = allergyItem.trim();
+									if (!trimmedItem.isEmpty()
+											&& ingredients.toLowerCase().contains(trimmedItem.toLowerCase())) {
+										if (trimmedItem.equalsIgnoreCase("milk")) {
+
+											allergyMilk = true;
+										} else {
+											if (addLCHFAllergensItemsList.trim() == "")
+												addLCHFAllergensItemsList = trimmedItem;
+											else
+												addLCHFAllergensItemsList += "," + trimmedItem;
+											allergyNut = true;
+										}
+									}
+								}
+
+								// Determine the type of allergen presence
+								if (allergyMilk && allergyNut) {
+									System.out.println("LCHF Recipe has both Milk and Nut allergens");
+									recipes_LCHF_Allergy_Milk.put("LCHF :" + Integer.toString(LCHFCounter),
+											new Object[] { recipe_ID, recipe_Name, recipe_Category, foodCategory,
+													ingredients, preparation_Time, cooking_Time, tags, no_of_servings,
+													cuisine_category, recipe_Description, preparation_method,
+													nutrient_values, recipe_URL, "Milk" });
+									recipes_LCHF_Allergy_Nut.put("LCHF :" + Integer.toString(LCHFCounter),
+											new Object[] { recipe_ID, recipe_Name, recipe_Category, foodCategory,
+													ingredients, preparation_Time, cooking_Time, tags, no_of_servings,
+													cuisine_category, recipe_Description, preparation_method,
+													nutrient_values, recipe_URL, addLCHFAllergensItemsList });
+
+								} else if (allergyMilk) {
+									System.out.println("LCHF Recipe has Milk allergen only");
+									recipes_LCHF_Allergy_Milk.put("LCHF :" + Integer.toString(LCHFCounter),
+											new Object[] { recipe_ID, recipe_Name, recipe_Category, foodCategory,
+													ingredients, preparation_Time, cooking_Time, tags, no_of_servings,
+													cuisine_category, recipe_Description, preparation_method,
+													nutrient_values, recipe_URL, "Milk" });
+								} else if (allergyNut) {
+									System.out.println("LCHF Recipe has Nut allergen only");
+									recipes_LCHF_Allergy_Nut.put("LCHF :" + Integer.toString(LCHFCounter),
+											new Object[] { recipe_ID, recipe_Name, recipe_Category, foodCategory,
+													ingredients, preparation_Time, cooking_Time, tags, no_of_servings,
+													cuisine_category, recipe_Description, preparation_method,
+													nutrient_values, recipe_URL, addLCHFAllergensItemsList });
+								} else {
+									System.out.println("LCHF Recipe has no milk or nut allergens");
+								}
+								LCHFCounter = LCHFCounter + 1;
+							}
+							// using all_recipesCounter to avoid duplications for current recipe
+							recipes_scrapped_treemap.put(recipe_ID + "_" + Integer.toString(all_recipesCounter),
 									new Object[] { recipe_ID, recipe_Name, recipe_Category, foodCategory, ingredients,
 											preparation_Time, cooking_Time, tags, no_of_servings, cuisine_category,
 											recipe_Description, preparation_method, nutrient_values, recipe_URL, "" });
 
-							// check add on items
-							boolean addLFVItemcheck = false;
-							String addLFVItemsList = "";
-							for (String addItem : LFV_AddItemList) {
-								if (ingredients.contains(addItem.trim()) && addItem.trim() != "") {
-									if (addLFVItemsList.trim() == "")
-										addLFVItemsList = addItem;
-									else
-										addLFVItemsList += "," + addItem;
-									addLFVItemcheck = true;
-								}
-							}
-							if (addLFVItemcheck) {
-								System.out.println("Recipe contains LFV Add Items : " + addLFVItemsList);
-								
-								recipes_LFV_Add.put("LFV :" + Integer.toString(LFVCounter),
-										new Object[] { recipe_ID, recipe_Name, recipe_Category, foodCategory,
-												ingredients, preparation_Time, cooking_Time, tags, no_of_servings,
-												cuisine_category, recipe_Description, preparation_method,
-												nutrient_values, recipe_URL, addLFVItemsList });
-							}
-							// code check LFV allergens
-							boolean allergyMilk = false;
-							boolean allergyNut = false;
-							String addLFVAllergensItemsList = "";
-							for (String allergyItem : allergiesList) {
-								String trimmedItem = allergyItem.trim();
-								if (!trimmedItem.isEmpty()
-										&& ingredients.toLowerCase().contains(trimmedItem.toLowerCase())) {
-									if (trimmedItem.equalsIgnoreCase("milk")) {
-
-										allergyMilk = true;
-									} else {
-										if (addLFVAllergensItemsList == "")
-											addLFVAllergensItemsList = trimmedItem;
-										else
-											addLFVAllergensItemsList += "," + trimmedItem;
-										allergyNut = true;
-									}
-								}
-							}
-
-							// Determine the type of allergen presence
-							if (allergyMilk && allergyNut) {
-								System.out.println("LFV Recipe has both Milk and Nut allergens");
-								recipes_Allergy_Milk.put("LFV :" + Integer.toString(LFVCounter),
-										new Object[] { recipe_ID, recipe_Name, recipe_Category, foodCategory,
-												ingredients, preparation_Time, cooking_Time, tags, no_of_servings,
-												cuisine_category, recipe_Description, preparation_method,
-												nutrient_values, recipe_URL, "Milk" });
-								recipes_Allergy_Nut.put("LFV :" + Integer.toString(LFVCounter),
-										new Object[] { recipe_ID, recipe_Name, recipe_Category, foodCategory,
-												ingredients, preparation_Time, cooking_Time, tags, no_of_servings,
-												cuisine_category, recipe_Description, preparation_method,
-												nutrient_values, recipe_URL, addLFVAllergensItemsList });
-
-							} else if (allergyMilk) {
-								System.out.println("LFV Recipe has Milk allergen only");
-								recipes_Allergy_Milk.put("LFV :" + Integer.toString(LFVCounter),
-										new Object[] { recipe_ID, recipe_Name, recipe_Category, foodCategory,
-												ingredients, preparation_Time, cooking_Time, tags, no_of_servings,
-												cuisine_category, recipe_Description, preparation_method,
-												nutrient_values, recipe_URL, "Milk" });
-							} else if (allergyNut) {
-								System.out.println("LFV Recipe has Nut allergen only");
-								recipes_Allergy_Nut.put("LFV :" + Integer.toString(LFVCounter),
-										new Object[] { recipe_ID, recipe_Name, recipe_Category, foodCategory,
-												ingredients, preparation_Time, cooking_Time, tags, no_of_servings,
-												cuisine_category, recipe_Description, preparation_method,
-												nutrient_values, recipe_URL, addLFVAllergensItemsList });
-							} else {
-								System.out.println("LFV Recipe has no milk or nut allergens");
-							}
-							LFVCounter = LFVCounter + 1;
-						}
-
-						// ******Iterate LCHF Elimination array list using for loop and compare each
-						// value****
-						// ****** with Ingredients to filter recipes*****
-
-						boolean validLCHFRecipe = true;
-						for (String eliminatedItem : LCHF_EliminateItemList) {
-
-							if (ingredients.contains(eliminatedItem) && eliminatedItem.trim() != "") {
-								validLCHFRecipe = false;
-								break;
-							}
-						}
-
-						if (validLCHFRecipe) {
-
-							System.out.println("Valid LCHF Recipe ");
-
-							recipes_LCHF_Elimination.put(Integer.toString(LCHFCounter),
-									new Object[] { recipe_ID, recipe_Name, recipe_Category, foodCategory, ingredients,
-											preparation_Time, cooking_Time, tags, no_of_servings, cuisine_category,
-											recipe_Description, preparation_method, nutrient_values, recipe_URL, "" });
-
-							// check add on items
-							boolean addLCHFItemcheck = false;
-							String addLCHFItemsList = "";
-							for (String addItem : LCHF_AddItemList) {
-								if (ingredients.contains(addItem.trim()) && addItem.trim() != "") {
-									if (addLCHFItemsList.trim() == "")
-										addLCHFItemsList = addItem;
-									else
-										addLCHFItemsList += "," + addItem;
-									addLCHFItemcheck = true;
-								}
-							}
-
-							if (addLCHFItemcheck) {
-								System.out.println("Recipe contains LCHF Add Items : " + addLCHFItemsList);
-								recipes_LCHF_Add.put("LCHF :" + Integer.toString(LCHFCounter),
-										new Object[] { recipe_ID, recipe_Name, recipe_Category, foodCategory,
-												ingredients, preparation_Time, cooking_Time, tags, no_of_servings,
-												cuisine_category, recipe_Description, preparation_method,
-												nutrient_values, recipe_URL, addLCHFItemsList });
-							}
-
-							// code check LCHF allergens
-							boolean allergyMilk = false;
-							boolean allergyNut = false;
-							String addLCHFAllergensItemsList = "";
-							for (String allergyItem : allergiesList) {
-								String trimmedItem = allergyItem.trim();
-								if (!trimmedItem.isEmpty()
-										&& ingredients.toLowerCase().contains(trimmedItem.toLowerCase())) {
-									if (trimmedItem.equalsIgnoreCase("milk")) {
-
-										allergyMilk = true;
-									} else {
-										if (addLCHFAllergensItemsList.trim() == "")
-											addLCHFAllergensItemsList = trimmedItem;
-										else
-											addLCHFAllergensItemsList += "," + trimmedItem;
-										allergyNut = true;
-									}
-								}
-							}
-
-							// Determine the type of allergen presence
-							if (allergyMilk && allergyNut) {
-								System.out.println("LCHF Recipe has both Milk and Nut allergens");
-								recipes_LCHF_Allergy_Milk.put("LCHF :" + Integer.toString(LCHFCounter),
-										new Object[] { recipe_ID, recipe_Name, recipe_Category, foodCategory,
-												ingredients, preparation_Time, cooking_Time, tags, no_of_servings,
-												cuisine_category, recipe_Description, preparation_method,
-												nutrient_values, recipe_URL, "Milk" });
-								recipes_LCHF_Allergy_Nut.put("LCHF :" + Integer.toString(LCHFCounter),
-										new Object[] { recipe_ID, recipe_Name, recipe_Category, foodCategory,
-												ingredients, preparation_Time, cooking_Time, tags, no_of_servings,
-												cuisine_category, recipe_Description, preparation_method,
-												nutrient_values, recipe_URL, addLCHFAllergensItemsList });
-
-							} else if (allergyMilk) {
-								System.out.println("LCHF Recipe has Milk allergen only");
-								recipes_LCHF_Allergy_Milk.put("LCHF :" + Integer.toString(LCHFCounter),
-										new Object[] { recipe_ID, recipe_Name, recipe_Category, foodCategory,
-												ingredients, preparation_Time, cooking_Time, tags, no_of_servings,
-												cuisine_category, recipe_Description, preparation_method,
-												nutrient_values, recipe_URL, "Milk" });
-							} else if (allergyNut) {
-								System.out.println("LCHF Recipe has Nut allergen only");
-								recipes_LCHF_Allergy_Nut.put("LCHF :" + Integer.toString(LCHFCounter),
-										new Object[] { recipe_ID, recipe_Name, recipe_Category, foodCategory,
-												ingredients, preparation_Time, cooking_Time, tags, no_of_servings,
-												cuisine_category, recipe_Description, preparation_method,
-												nutrient_values, recipe_URL, addLCHFAllergensItemsList });
-							} else {
-								System.out.println("LCHF Recipe has no milk or nut allergens");
-							}
-							LCHFCounter = LCHFCounter + 1;
-						}
-						// using all_recipesCounter to avoid duplications for current recipe
-						recipes_scrapped_treemap.put(recipe_ID+"_"+Integer.toString(all_recipesCounter),
-								new Object[] { recipe_ID, recipe_Name, recipe_Category, foodCategory, ingredients,
-										preparation_Time, cooking_Time, tags, no_of_servings, cuisine_category,
-										recipe_Description, preparation_method, nutrient_values, recipe_URL, "" });
-						System.out.println("Display Recipes count : "+recipeUrls.size());
-						
 							driver.navigate().back();
+						}
 					}
 
 				} while (clickNext());
 
 			}
 			System.out.println("\nTotal number of " + foodCategory + " recipes scrapped are: " + totalRecipes);
-
 		}
 
 		System.out.println("\n********************************************");
@@ -531,6 +544,10 @@ public class Search_Scrape_Recipes {
 		for (int f = 2; f <= 32; f++) {
 			String recipeCategories = FoodCategoryreader.getCellData("Food Category", 2, f);
 			recipeCategorieslist.add(recipeCategories);
+		}
+		for (int f = 2; f <= 7; f++) {
+			String recipeCategories = FoodCategoryreader.getCellData("Food Category", 5, f);
+			recipeFoodsToAvoidlist.add(recipeCategories);
 		}
 	}
 }
