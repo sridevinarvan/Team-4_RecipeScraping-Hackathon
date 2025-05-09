@@ -65,7 +65,7 @@ public class Search_Scrape_Recipes {
 		Map<String, Object[]> recipes_Allergy_Nut = new TreeMap<String, Object[]>();
 		Map<String, Object[]> recipes_LCHF_Allergy_Milk = new TreeMap<String, Object[]>();
 		Map<String, Object[]> recipes_LCHF_Allergy_Nut = new TreeMap<String, Object[]>();
-		int total_recipes = 0;// counter for total recipes
+		//int total_recipes = 0;// counter for total recipes
 		for (int foodCatIndex = 0; foodCatIndex < foodCategoryDataList.size(); foodCatIndex++) {
 
 			String foodCategory = foodCategoryDataList.get(foodCatIndex);
@@ -94,17 +94,13 @@ public class Search_Scrape_Recipes {
 					List<WebElement> allLinks = driver.findElements(By.xpath("//h5[@class='mb-0 two-line-text']/a"));
 					List<String> recipeNames = new ArrayList<>();
 					List<String> recipeUrls = new ArrayList<>();
-					int breakloop = 0;					
+					
 					for (WebElement link : allLinks) {
 						if (link.isDisplayed()) {
 							recipeNames.add(link.getText());
 							recipeUrls.add(link.getAttribute("href"));
 							all_recipesCounter++;		
-							total_recipes++;
-							if (foodCategory.equalsIgnoreCase("Vegetarian")) {
-								if (total_recipes == 150)
-									break;
-							}
+							//total_recipes++;							
 						}
 					}
 
@@ -189,14 +185,6 @@ public class Search_Scrape_Recipes {
 						} catch (Exception e) {
 						}
 						
-						
-						//List<WebElement> descriptionElements = driver.findElements(By.xpath("//p[contains(text(),'|')]"));
-						/*if (!descriptionElements.isEmpty()) {
-							recipe_Description = descriptionElements.get(0).getText();
-						} else {
-							recipe_Description = "not available";
-						}*/
-
 						List<WebElement> prepMethodElements = driver.findElements(By.xpath("//div[@id='methods']"));
 						if (!prepMethodElements.isEmpty()) {
 							preparation_method = prepMethodElements.get(0).getText();
@@ -253,8 +241,7 @@ public class Search_Scrape_Recipes {
 							}
 							if (addLFVItemcheck) {
 								System.out.println("Recipe contains LFV Add Items : " + addLFVItemsList);
-
-								// using all_recipesCounter to avoid duplications for current recipe
+								
 								recipes_LFV_Add.put("LFV :" + Integer.toString(LFVCounter),
 										new Object[] { recipe_ID, recipe_Name, recipe_Category, foodCategory,
 												ingredients, preparation_Time, cooking_Time, tags, no_of_servings,
@@ -414,11 +401,12 @@ public class Search_Scrape_Recipes {
 							}
 							LCHFCounter = LCHFCounter + 1;
 						}
-
+						// using all_recipesCounter to avoid duplications for current recipe
 						recipes_scrapped_treemap.put(recipe_ID+"_"+Integer.toString(all_recipesCounter),
 								new Object[] { recipe_ID, recipe_Name, recipe_Category, foodCategory, ingredients,
 										preparation_Time, cooking_Time, tags, no_of_servings, cuisine_category,
 										recipe_Description, preparation_method, nutrient_values, recipe_URL, "" });
+						System.out.println("Display Recipes count : "+recipeUrls.size());
 						
 							driver.navigate().back();
 					}
